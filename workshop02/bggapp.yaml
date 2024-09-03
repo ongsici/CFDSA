@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bggapp-deploy
+  namespace: bggns
+  labels:
+    app: bgg
+    name: bggapp-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bgg
+      name: bggapp-pod
+  template: 
+    metadata:
+      # name: bggapp-container
+      namespace: bggns
+      labels:
+        app: bgg
+        name: bggapp-pod
+    spec:
+      # example of selecting only gpu enabled nodes
+      # nodeSelector:
+        # gpu-enabled: yes
+      containers:
+      - name: bggapp-container
+        image: stackupiss/bgg-backend:v1
+        imagePullPolicy: IfNotPresent
+        # can use envFrom to import the entire config and secrets
+        # but need to be careful not to expose other secrets
+        # envFrom:
+        # - configMapRef:
+        #   name: bgg-config
+        # - secretKeyRef:
+        #   name: bgg-secret
+        ports:
+        - name: app-port
+          containerPort: 3000
+
+        # readinessProbe:
+        #   httpGet:
+        #     path: /healthz
+        #     port: app-port
+        #   timeoutSeconds: 5
+        #   failureThreshold: 1
+        # livenessProbe:
+        #   httpGet:
+        #     path: /healthz
+        #     port: app-port
+        #   timeoutSeconds: 5
+        #   failureThreshold: 3
+        #   successThreshold: 1
+        env:
+        - name: BGG_DB_HOST
+          # value: bggdb-svc
+          valueFrom:
+            configMapKeyRef:
+              name: bgg-config
+              key: BGG_DB_HOST
+        - name: BGG_DB_USER
+          valueFrom: 
+            secretKeyRef:
+              name: bgg-secret
+              key: BGG_DB_USER
+        - name: BGG_DB_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: bgg-secret
+              key: BGG_DB_PASSWORD
+
+---
+apiVersion: v1
+kind: Service 
+metadata:
+  name: bggapp-svc
+  namespace: bggns
+  labels:
+    app: bgg
+    name: bggapp-svc
+spec:
+  # type: NodePort
+  type: LoadBalancer
+  selector:
+    app: bgg
+  ports:
+  # - port: 3000
+  - port: 80
+    targetPort: app-port
+    # generally don't configure the node port number 
+    # nodePort: 30100
