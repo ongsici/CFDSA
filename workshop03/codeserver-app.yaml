@@ -20,6 +20,7 @@ spec:
         app: codeserver
         name: codeserver-pod
     spec:
+      # can add fsgroup here 
       volumes:
         - name: data-vol
           persistentVolumeClaim:
@@ -28,42 +29,48 @@ spec:
       - name: codeserver-container
         image: linuxserver/code-server:latest
         imagePullPolicy: IfNotPresent
-        # resources:
-        #   limits:
-        #     memory: "256Mi"
-        #     cpu: "200m"
-        #   requests:
-        #     memory: "256Mi"
-        #     cpu: "200m"
+        resources:
+          # minimum amt of resources
+          requests:
+            memory: 256Mi
+            cpu: 200mi
+          limits: #maximum 
+            memory: 256Mi
+            cpu: 200mi
         ports:
         - name: app-port
           containerPort: 8443
-        env:
-        - name: TZ
-          valueFrom:
-            configMapKeyRef:
-              name: codeserver-config
-              key: TZ
-        - name: DEFAULT_WORKSPACE
-          valueFrom: 
-            configMapKeyRef:
-              name: codeserver-config
-              key: DEFAULT_WORKSPACE
-        - name: PROXY_DOMAIN
-          valueFrom: 
-            configMapKeyRef:
-              name: codeserver-config
-              key: PROXY_DOMAIN
-        - name: PASSWORD
-          valueFrom: 
-            secretKeyRef:
-              name: codeserver-secret
-              key: PASSWORD
-        - name: SUDO_PASSWORD
-          valueFrom: 
-            secretKeyRef:
-              name: codeserver-secret
-              key: SUDO_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: codeserver-config
+        - secretRef:
+            name: codeserver-secret
+        # env:
+        # - name: TZ
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: codeserver-config
+        #       key: TZ
+        # - name: DEFAULT_WORKSPACE
+        #   valueFrom: 
+        #     configMapKeyRef:
+        #       name: codeserver-config
+        #       key: DEFAULT_WORKSPACE
+        # - name: PROXY_DOMAIN
+        #   valueFrom: 
+        #     configMapKeyRef:
+        #       name: codeserver-config
+        #       key: PROXY_DOMAIN
+        # - name: PASSWORD
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: codeserver-secret
+        #       key: PASSWORD
+        # - name: SUDO_PASSWORD
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: codeserver-secret
+        #       key: SUDO_PASSWORD
         volumeMounts:
         - name: data-vol
           mountPath: /config/workspace
